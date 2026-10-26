@@ -1,5 +1,20 @@
 export const destinationsData = [
   {
+    id: "dest-manali",
+    name: "Manali",
+    country: "India",
+    continent: "Asia",
+    tagline: "Snow-Capped Peaks, Solang Valley Adventure & Rohtang Pass",
+    image: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=900&q=80",
+    rating: 4.96,
+    reviewsCount: 2680,
+    packagesCount: 2,
+    description: "Nestled in the breathtaking Beas River valley of Himachal Pradesh, Manali (also popular as Maneli) is India's beloved mountain haven. Famed for paragliding and snow sports in Solang Valley, Rohtang Pass glaciers, the engineering marvel of Atal Tunnel, ancient cedarwood Hadimba Temple, and vibrant riverside apple orchards.",
+    bestTimeToVisit: "October - June (Winter Snow: Dec - Feb / Alpine Summer: Mar - Jun)",
+    popularTags: ["Manali", "Maneli", "Snow", "Solang Valley", "Rohtang Pass", "Adventure", "Himalayas", "River Rafting"],
+    featured: true
+  },
+  {
     id: "dest-kashmir",
     name: "Kashmir",
     country: "India",

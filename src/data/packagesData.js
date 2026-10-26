@@ -1,5 +1,230 @@
 export const packagesData = [
   {
+    id: "pkg-manali-snow-solang",
+    title: "Manali Snow Kingdom: Solang Valley, Rohtang Pass & Atal Tunnel Expedition",
+    destinationId: "dest-manali",
+    destination: "Manali",
+    country: "India",
+    continent: "Asia",
+    category: "Mountain Adventure",
+    durationDays: 5,
+    durationNights: 4,
+    price: 499,
+    originalPrice: 650,
+    rating: 4.96,
+    reviewsCount: 412,
+    badge: "Best Seller",
+    featured: true,
+    groupSize: "Small Group (Max 10)",
+    language: "English, Hindi",
+    activityLevel: "Moderate",
+    images: [
+      "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1571401835393-8c5f35328320?auto=format&fit=crop&w=1000&q=80",
+      "https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=1000&q=80",
+      "https://images.unsplash.com/photo-1596895111956-bf1cf0599ce5?auto=format&fit=crop&w=1000&q=80"
+    ],
+    overview: "Discover the crown jewel of Himachal Pradesh. Experience the pristine snowscapes of Solang Valley and Rohtang Pass, drive through the world's longest high-altitude highway Atal Tunnel into Sissu Valley, go white-water river rafting on the rushing Beas River, visit the 16th-century wooden pagoda Hadimba Temple amidst towering deodars, and explore the quaint cafes of Old Manali (also popular as Maneli).",
+    highlights: [
+      "Rohtang Pass snow point excursion (13,058 ft) & glacier viewpoints",
+      "Solang Valley adventure pass: Paragliding, Snow Scooter & Zorbing",
+      "Drive through the historic Atal Tunnel to Sissu waterfall in Lahaul Valley",
+      "White-water rafting on the thrilling rapids of the Beas River in Kullu",
+      "Heritage Hadimba Devi Temple, Vashisht sulfur hot springs & Tibetan Monastery",
+      "Old Manali cafe hopping, local apple cider tasting & Mall Road shopping"
+    ],
+    itinerary: [
+      {
+        day: 1,
+        title: "Manali Arrival & Hadimba Devi Heritage Walk",
+        description: "Chauffeur reception at Kullu-Manali Airport (KUU) or Volvo bus terminal. Check in at your luxury cedarwood mountain resort overlooking the snow-capped Pir Panjal range. Afternoon walk through Dhungri deodar forests to the historic wooden Hadimba Temple and Vashisht natural hot springs.",
+        meals: "Himachali Welcome Dinner Included",
+        stay: "Span Resort & Spa or The Himalayan Luxury Castle, Manali"
+      },
+      {
+        day: 2,
+        title: "Solang Valley Snow Sports & Adventure Arena",
+        description: "Full-day excursion to Solang Valley (8,500 ft). Experience tandem paragliding soaring over alpine pine forests, take a cable car ropeway to Mount Phatru, and enjoy snow scooters, sledging, and quad biking.",
+        meals: "Breakfast & Riverside Alpine Lunch",
+        stay: "Span Resort & Spa or The Himalayan Luxury Castle, Manali"
+      },
+      {
+        day: 3,
+        title: "Atal Tunnel & Sissu Waterfalls in Lahaul Valley",
+        description: "Drive through the 9.02 km long engineering marvel Atal Tunnel beneath the Rohtang Pass. Emerge into the stark trans-Himalayan wonderland of Lahaul Valley. Photograph the frozen cascades of Sissu Waterfall and stroll along the Chandra River.",
+        meals: "Breakfast & Mountain Maggi and Thukpa Lunch",
+        stay: "Span Resort & Spa or The Himalayan Luxury Castle, Manali"
+      },
+      {
+        day: 4,
+        title: "Rohtang Pass Snow Peak & Kullu White-Water Rafting",
+        description: "Ascend to the breathtaking Rohtang Pass (13,058 ft) for panoramic glacier views connecting Kullu to Spiti. In the afternoon, head to Kullu for an adrenaline-fueled 14 km white-water rafting run on the Beas River.",
+        meals: "Breakfast & Riverside BBQ Dinner",
+        stay: "Span Resort & Spa or The Himalayan Luxury Castle, Manali"
+      },
+      {
+        day: 5,
+        title: "Old Manali Bohemian Cafes & Departure",
+        description: "Morning stroll through Old Manali's quaint wood-and-stone alleys, visiting local artisan bakeries, apple orchard trails, and woolen Kullu shawl emporiums on Mall Road. Transfer to airport or Volvo terminal for departure.",
+        meals: "Buffet Breakfast Included",
+        stay: "Departure"
+      }
+    ],
+    inclusions: [
+      "4 Nights in luxury 4 & 5-star mountain chalet resort with snow-peak views",
+      "Daily gourmet breakfasts and chef-curated Himalayan dinners",
+      "Private Toyota Innova chauffeur transportation for all excursions",
+      "National Green Tribunal (NGT) permits for Rohtang Pass & Atal Tunnel",
+      "Solang Valley ropeway cable car tickets",
+      "Beas River white-water rafting safety gear and certified river captain"
+    ],
+    exclusions: [
+      "Airfare or Volvo bus tickets to/from Manali",
+      "Personal paragliding / snow scooter rentals in Solang",
+      "Kullu shawl shopping and personal beverages",
+      "Travel insurance (can be added during checkout)"
+    ],
+    faqs: [
+      {
+        question: "When is the best time to see snow in Manali / Maneli?",
+        answer: "Snowfall typically occurs from late December through February in Manali town. Solang Valley and Rohtang Pass have snow points accessible for most of the year."
+      },
+      {
+        question: "Is Atal Tunnel open throughout the year?",
+        answer: "Yes, the Atal Tunnel is an all-weather highway open year-round, allowing safe passage between Manali and Lahaul Valley even when Rohtang Pass is closed."
+      },
+      {
+        question: "Is this tour suitable for families with senior citizens and children?",
+        answer: "Yes! All transfers are in comfortable heated vehicles, and scenic sightseeing points have comfortable resting points without strenuous trekking."
+      }
+    ],
+    reviews: [
+      {
+        id: "rev-manali-1",
+        user: "Rohit & Ananya Verma",
+        avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
+        date: "October 2026",
+        rating: 5,
+        comment: "The Atal Tunnel drive and the snow in Solang Valley were beyond incredible. Our resort view of the snow peaks every morning was breathtaking!"
+      },
+      {
+        id: "rev-manali-2",
+        user: "Neha Kulkarni",
+        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
+        date: "September 2026",
+        rating: 5,
+        comment: "Hadimba Temple surrounded by giant deodars felt magical. River rafting in Kullu was exhilarating and well organized. 10/10 recommend this Manali trip!"
+      }
+    ]
+  },
+  {
+    id: "pkg-manali-kasol-parvati",
+    title: "Manali & Kasol Valley: Manikaran Hot Springs, Jogini Waterfall & Pine Trails",
+    destinationId: "dest-manali",
+    destination: "Manali",
+    country: "India",
+    continent: "Asia",
+    category: "Nature & Wildlife",
+    durationDays: 6,
+    durationNights: 5,
+    price: 580,
+    originalPrice: 720,
+    rating: 4.93,
+    reviewsCount: 298,
+    badge: "Trending",
+    featured: false,
+    groupSize: "Small Group (Max 12)",
+    language: "English, Hindi",
+    activityLevel: "Moderate",
+    images: [
+      "https://images.unsplash.com/photo-1571401835393-8c5f35328320?auto=format&fit=crop&w=1200&q=80",
+      "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=1000&q=80",
+      "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?auto=format&fit=crop&w=1000&q=80",
+      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1000&q=80"
+    ],
+    overview: "Combine the best of Manali's snow-clad peaks with the bohemian mystic charm of Kasol and Parvati Valley. Trek through apple orchards to cascading Jogini Waterfall, bathe in sacred hot springs at Manikaran Sahib, camp along the turquoise Parvati River, and taste authentic woodfired Israeli and Himachali delicacies.",
+    highlights: [
+      "Trek to the thunderous multi-tiered Jogini Waterfall through pine forests",
+      "Scenic Parvati Valley exploration: Kasol, Chalal riverside walk & Tosh village",
+      "Visit the revered Manikaran Sahib Gurudwara and natural boiling sulfur springs",
+      "Campfire riverside barbecue night along the crystal Parvati River",
+      "Explore Naggar Castle: 500-year-old wooden heritage castle overlooking Kullu valley",
+      "Solang Valley snow fun and mountain cable car ride"
+    ],
+    itinerary: [
+      {
+        day: 1,
+        title: "Arrive in Manali & Jogini Waterfall Trek",
+        description: "Arrive in Manali and transfer to your pine-view mountain resort. Afternoon gentle trek from Vashisht village through apple orchards to the stunning Jogini Waterfall.",
+        meals: "Welcome Dinner",
+        stay: "Manali Alpine Pine Resort"
+      },
+      {
+        day: 2,
+        title: "Solang Valley Adventure & Naggar Castle",
+        description: "Morning in Solang Valley for paragliding or cable car ride. Afternoon drive to historic Naggar Castle, built in 1460 AD, and visit Nicholas Roerich Art Gallery.",
+        meals: "Breakfast & Himachali Siddu Lunch",
+        stay: "Manali Alpine Pine Resort"
+      },
+      {
+        day: 3,
+        title: "Journey to Parvati Valley & Kasol Riverside",
+        description: "Scenic drive alongside the confluence of the Beas and Parvati rivers into Kasol. Relax at Bohemian riverside cafes and take the peaceful pine forest walk to Chalal village.",
+        meals: "Breakfast & Cafe Lunch",
+        stay: "Riverside Boutique Camp, Kasol"
+      },
+      {
+        day: 4,
+        title: "Manikaran Sahib Sacred Hot Springs & Tosh Hamlet",
+        description: "Visit the revered Manikaran Sahib Gurudwara and Shiva temple, famous for curative natural geothermal springs. Drive up to the fairytale village of Tosh for sweeping glacier views.",
+        meals: "Breakfast & Traditional Langar Lunch",
+        stay: "Riverside Boutique Camp, Kasol"
+      },
+      {
+        day: 5,
+        title: "Malana Viewpoint & Riverside Campfire Night",
+        description: "Explore the scenic vistas near the ancient, mysterious village of Malana. Evening riverside acoustic music, stargazing, and bonfire dinner under the Himalayan night sky.",
+        meals: "Breakfast & Campfire Barbecue Dinner",
+        stay: "Riverside Boutique Camp, Kasol"
+      },
+      {
+        day: 6,
+        title: "Farewell Himalayas & Departure",
+        description: "Morning breakfast beside the roaring river before chauffeur transfer to Kullu-Bhuntar Airport or Volvo terminal for departure.",
+        meals: "Breakfast Included",
+        stay: "Departure"
+      }
+    ],
+    inclusions: [
+      "5 Nights in luxury resort in Manali & riverside luxury glamping in Kasol",
+      "Daily hot breakfasts and dinners with regional delicacies",
+      "Private chauffeur transportation across Manali, Kasol & Manikaran",
+      "Guided Jogini Waterfall and Chalal pine forest nature walks",
+      "Bonfire night setup with music by the Parvati River"
+    ],
+    exclusions: [
+      "Travel to/from Kullu/Manali",
+      "Personal cafe visits and shopping in Kasol flea markets",
+      "Adventure activities fees"
+    ],
+    faqs: [
+      {
+        question: "Is Kasol safe for families and couples?",
+        answer: "Yes, our properties are premium, family-friendly riverside resorts and boutique camps with 24/7 security."
+      }
+    ],
+    reviews: [
+      {
+        id: "rev-kasol-1",
+        user: "Aditya & Ritu Sen",
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
+        date: "September 2026",
+        rating: 5,
+        comment: "Combining Manali with Kasol and Manikaran was the best decision. The hot springs and riverside camping were surreal!"
+      }
+    ]
+  },
+  {
     id: "pkg-kashmir-paradise",
     title: "Kashmir Paradise on Earth: Dal Lake Luxury Houseboat, Gulmarg Gondola & Betaab Valley",
     destinationId: "dest-kashmir",

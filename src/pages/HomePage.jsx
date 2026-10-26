@@ -98,7 +98,7 @@ export const HomePage = () => {
                   <input
                     id="search-input"
                     type="text"
-                    placeholder="Where to? (e.g. Bali, Swiss)"
+                    placeholder="Where to? (e.g. Manali, Kashmir, Bali)"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full text-sm font-semibold bg-transparent text-slate-900 placeholder-slate-600 focus:outline-none"

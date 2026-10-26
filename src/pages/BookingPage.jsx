@@ -1,13 +1,11 @@
-import React, { useState, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import {
   MapPin,
   Calendar,
   Users,
   ShieldCheck,
   CreditCard,
-  Luggage,
-  Sparkles,
   ArrowLeft,
   CheckCircle2,
   AlertCircle,
@@ -15,19 +13,38 @@ import {
   Check,
   ArrowRight,
   Clock,
-  Printer
+  Printer,
+  Lock,
+  User,
+  Mail,
+  Phone,
+  LogOut,
+  UserCheck,
+  Eye,
+  EyeOff,
+  Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { packagesData } from '../data/packagesData';
 import { useBooking } from '../context/BookingContext';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import { formatPrice, generateBookingId } from '../utils/formatters';
 
 export const BookingPage = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const { createBooking, currency } = useBooking();
   const { addToast } = useToast();
+  const {
+    user,
+    isAuthenticated,
+    logout,
+    login,
+    signup,
+    quickLogin,
+    openAuthModal,
+    demoCustomers
+  } = useAuth();
 
   const pkg = packagesData.find((p) => p.id === id) || packagesData[0];
 
@@ -40,9 +57,9 @@ export const BookingPage = () => {
 
   // Form State
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
+    fullName: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
     travelDate: '',
     adults: 2,
     children: 0,
@@ -61,6 +78,44 @@ export const BookingPage = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmedBooking, setConfirmedBooking] = useState(null);
+
+  // Inline auth state when not logged in
+  const [authInlineTab, setAuthInlineTab] = useState('login'); // 'login' | 'register'
+  const [inlineEmail, setInlineEmail] = useState('');
+  const [inlinePassword, setInlinePassword] = useState('');
+  const [inlineName, setInlineName] = useState('');
+  const [inlinePhone, setInlinePhone] = useState('');
+  const [inlineAuthError, setInlineAuthError] = useState('');
+  const [inlineAuthLoading, setInlineAuthLoading] = useState(false);
+  const [showInlinePassword, setShowInlinePassword] = useState(false);
+
+  // Sync customer details whenever logged-in user changes
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: user.name || prev.fullName,
+        email: user.email || prev.email,
+        phone: user.phone || prev.phone
+      }));
+      setInlineAuthError('');
+      // Clear errors on customer fields if any
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.fullName;
+        delete next.email;
+        delete next.phone;
+        return next;
+      });
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        fullName: '',
+        email: '',
+        phone: ''
+      }));
+    }
+  }, [user]);
 
   // Available room types
   const roomTypes = [
@@ -111,6 +166,75 @@ export const BookingPage = () => {
     setAppliedPromo(null);
     setFormData((prev) => ({ ...prev, promoCodeInput: '' }));
     addToast('Promo code removed', 'info');
+  };
+
+  // Inline Authentication Handlers
+  const handleInlineLogin = (e) => {
+    e.preventDefault();
+    setInlineAuthError('');
+
+    if (!inlineEmail.trim() || !inlinePassword.trim()) {
+      setInlineAuthError('Please enter both email and password.');
+      return;
+    }
+
+    setInlineAuthLoading(true);
+    setTimeout(() => {
+      const res = login(inlineEmail, inlinePassword);
+      setInlineAuthLoading(false);
+      if (!res.success) {
+        setInlineAuthError(res.error);
+      } else {
+        setInlineEmail('');
+        setInlinePassword('');
+      }
+    }, 300);
+  };
+
+  const handleInlineRegister = (e) => {
+    e.preventDefault();
+    setInlineAuthError('');
+
+    if (!inlineName.trim()) {
+      setInlineAuthError('Please enter your full name.');
+      return;
+    }
+    if (!inlineEmail.trim() || !inlineEmail.includes('@')) {
+      setInlineAuthError('Please enter a valid email address.');
+      return;
+    }
+    if (!inlinePhone.trim() || inlinePhone.trim().length < 8) {
+      setInlineAuthError('Please provide a valid phone number (at least 8 digits).');
+      return;
+    }
+    if (!inlinePassword || inlinePassword.length < 4) {
+      setInlineAuthError('Password must be at least 4 characters long.');
+      return;
+    }
+
+    setInlineAuthLoading(true);
+    setTimeout(() => {
+      const res = signup({
+        name: inlineName,
+        email: inlineEmail,
+        phone: inlinePhone,
+        password: inlinePassword
+      });
+      setInlineAuthLoading(false);
+      if (!res.success) {
+        setInlineAuthError(res.error);
+      } else {
+        setInlineName('');
+        setInlineEmail('');
+        setInlinePhone('');
+        setInlinePassword('');
+      }
+    }, 300);
+  };
+
+  const handleInlineQuickDemo = (email) => {
+    setInlineAuthError('');
+    quickLogin(email);
   };
 
   // Calculations
@@ -210,14 +334,29 @@ export const BookingPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Scroll helper to customer authentication section
+  const scrollToCustomerSection = () => {
+    const element = document.getElementById('customer-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   // Form Submit Handler
   const handleSubmit = (e) => {
     e.preventDefault();
 
+    // Check if customer is logged in first!
+    if (!isAuthenticated) {
+      addToast('Customer login is required before confirming a booking.', 'warning', 4500);
+      scrollToCustomerSection();
+      return;
+    }
+
     if (!validateForm()) {
       addToast('Please correct the highlighted errors in the form.', 'error');
       // Scroll to the first error
-      window.scrollTo({ top: 180, behavior: 'smooth' });
+      window.scrollTo({ top: 220, behavior: 'smooth' });
       return;
     }
 
@@ -236,6 +375,7 @@ export const BookingPage = () => {
         roomType: formData.roomType,
         roomTypeName: calculations.selectedRoom.name,
         addons: calculations.activeAddonsList,
+        customerId: user?.id || null,
         customerName: formData.fullName.trim(),
         customerEmail: formData.email.trim(),
         customerPhone: formData.phone.trim(),
@@ -260,8 +400,8 @@ export const BookingPage = () => {
       // Trigger Confetti!
       try {
         confetti({
-          particleCount: 100,
-          spread: 70,
+          particleCount: 110,
+          spread: 75,
           origin: { y: 0.6 }
         });
       } catch (err) {
@@ -284,11 +424,22 @@ export const BookingPage = () => {
               Booking Confirmed
             </span>
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              You're Ready for Adventure!
+              You're Ready for Adventure, {confirmedBooking.customerName.split(' ')[0]}!
             </h2>
             <p className="text-sm text-slate-500 max-w-md mx-auto">
-              Your vacation voucher has been created and saved in your browser's LocalStorage.
+              Your vacation voucher has been created and securely saved to your customer account profile.
             </p>
+          </div>
+
+          {/* Customer Confirmation Badge */}
+          <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-between text-xs text-sky-900">
+            <div className="flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-sky-600" />
+              <span>Customer Account: <strong>{confirmedBooking.customerEmail}</strong></span>
+            </div>
+            {isAuthenticated && (
+              <span className="font-semibold text-emerald-600">✓ Profile Linked</span>
+            )}
           </div>
 
           {/* Reference Card */}
@@ -315,8 +466,12 @@ export const BookingPage = () => {
                 <span className="font-bold text-slate-800">{confirmedBooking.travelDate}</span>
               </div>
               <div>
-                <span className="text-slate-500 block">Traveler:</span>
+                <span className="text-slate-500 block">Customer Name:</span>
                 <span className="font-bold text-slate-800">{confirmedBooking.customerName}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">Contact Phone:</span>
+                <span className="font-bold text-slate-800">{confirmedBooking.customerPhone}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">Total Paid:</span>
@@ -339,7 +494,7 @@ export const BookingPage = () => {
 
             <button
               onClick={() => window.print()}
-              className="px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm transition-colors flex items-center justify-center gap-2"
+              className="px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
             >
               <Printer className="w-4 h-4" />
               <span>Print Confirmation</span>
@@ -372,7 +527,7 @@ export const BookingPage = () => {
           Complete Your Travel Reservation
         </h1>
         <p className="text-sm text-slate-500">
-          Customize your package options and enter guest information for instant confirmation.
+          Verify trip dates, select room enhancements, and sign in with your customer details for instant confirmation.
         </p>
       </div>
 
@@ -455,7 +610,7 @@ export const BookingPage = () => {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, adults: Math.max(1, formData.adults - 1) })}
-                    className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-l-xl text-slate-700 font-bold"
+                    className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-l-xl text-slate-700 font-bold cursor-pointer"
                   >
                     -
                   </button>
@@ -471,7 +626,7 @@ export const BookingPage = () => {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, adults: formData.adults + 1 })}
-                    className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-r-xl text-slate-700 font-bold"
+                    className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-r-xl text-slate-700 font-bold cursor-pointer"
                   >
                     +
                   </button>
@@ -487,7 +642,7 @@ export const BookingPage = () => {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, children: Math.max(0, formData.children - 1) })}
-                    className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-l-xl text-slate-700 font-bold"
+                    className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-l-xl text-slate-700 font-bold cursor-pointer"
                   >
                     -
                   </button>
@@ -503,7 +658,7 @@ export const BookingPage = () => {
                   <button
                     type="button"
                     onClick={() => setFormData({ ...formData, children: formData.children + 1 })}
-                    className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-r-xl text-slate-700 font-bold"
+                    className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-r-xl text-slate-700 font-bold cursor-pointer"
                   >
                     +
                   </button>
@@ -584,7 +739,7 @@ export const BookingPage = () => {
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => toggleAddon(addon.id)}
-                        className="mt-1 w-4 h-4 text-teal-600 rounded focus:ring-teal-500 accent-teal-600"
+                        className="mt-1 w-4 h-4 text-teal-600 rounded focus:ring-teal-500 accent-teal-600 cursor-pointer"
                       />
                       <div>
                         <span className="font-bold text-xs sm:text-sm text-slate-900 block">
@@ -604,34 +759,323 @@ export const BookingPage = () => {
             </div>
           </div>
 
-          {/* Step 4: Lead Traveler Contact Details with Live Validation */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-6">
-            <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-sky-600 text-white text-xs flex items-center justify-center font-bold">
-                3
-              </span>
-              <span>Lead Traveler Information</span>
-            </h3>
+          {/* Step 4: Customer Details & Authentication (REQUIRED BEFORE BOOKING) */}
+          <div
+            id="customer-section"
+            className="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm space-y-6 scroll-mt-28"
+          >
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-sky-600 text-white text-xs flex items-center justify-center font-bold">
+                  3
+                </span>
+                <span>Customer Details & Authentication</span>
+              </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Login Status Indicator */}
+              {isAuthenticated ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Customer Logged In</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
+                  <Lock className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Login Required Before Booking</span>
+                </span>
+              )}
+            </div>
+
+            {/* If Customer is LOGGED IN: Show Customer Details Banner & Logout Option */}
+            {isAuthenticated ? (
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-sky-50 via-teal-50 to-emerald-50 border border-sky-200/80 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`}
+                      alt={user.name}
+                      className="w-12 h-12 rounded-2xl object-cover border-2 border-teal-400 shadow-sm"
+                    />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-extrabold text-slate-900">{user.name}</span>
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                          Active Account
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600">{user.email}</p>
+                      {user.phone && <p className="text-[11px] text-slate-500">{user.phone}</p>}
+                    </div>
+                  </div>
+
+                  {/* Customer Logout / Switch Account Button */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-rose-600 text-xs font-bold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                      title="Log out of this customer account"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Log Out / Switch</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-sky-100 flex items-center gap-2 text-xs text-slate-600">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    Your customer contact details have been automatically filled in below. You can make adjustments for this booking if necessary.
+                  </span>
+                </div>
+              </div>
+            ) : (
+              /* If Customer is NOT LOGGED IN: Prominent Customer Login & Registration Box */
+              <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-b from-sky-50/90 via-slate-50 to-white border-2 border-dashed border-sky-300 space-y-5">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2 text-sky-900 font-extrabold text-sm sm:text-base">
+                    <Lock className="w-5 h-5 text-sky-600" />
+                    <span>Please Log In or Register Customer Details to Book</span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Customer authentication is required before booking to securely issue your tickets and attach this itinerary to your profile.
+                  </p>
+                </div>
+
+                {/* Inline Auth Error Banner */}
+                {inlineAuthError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                    <span>{inlineAuthError}</span>
+                  </div>
+                )}
+
+                {/* Quick 1-Click Demo Customer Buttons */}
+                <div className="p-3.5 rounded-xl bg-white border border-sky-200 shadow-sm space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-800 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+                      1-Click Instant Demo Login
+                    </span>
+                    <span className="text-[11px] text-sky-600 font-medium">Quick Test</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {demoCustomers.map((demo) => (
+                      <button
+                        key={demo.id}
+                        type="button"
+                        onClick={() => handleInlineQuickDemo(demo.email)}
+                        className="p-2 rounded-xl bg-slate-50 hover:bg-sky-50 border border-slate-200 hover:border-sky-300 text-left transition-all flex items-center gap-2.5 cursor-pointer group"
+                      >
+                        <img
+                          src={demo.avatar}
+                          alt={demo.name}
+                          className="w-7 h-7 rounded-lg object-cover shrink-0 border border-sky-200"
+                        />
+                        <div className="truncate">
+                          <span className="font-bold text-xs text-slate-900 block truncate group-hover:text-sky-700">
+                            {demo.name}
+                          </span>
+                          <span className="text-[10px] text-slate-500 block truncate">{demo.email}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tabs for Inline Sign In vs Inline Register */}
+                <div className="border border-slate-200 rounded-2xl bg-white overflow-hidden shadow-sm">
+                  <div className="grid grid-cols-2 p-1 bg-slate-100/80 border-b border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthInlineTab('login');
+                        setInlineAuthError('');
+                      }}
+                      className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                        authInlineTab === 'login'
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Customer Sign In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthInlineTab('register');
+                        setInlineAuthError('');
+                      }}
+                      className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                        authInlineTab === 'register'
+                          ? 'bg-white text-slate-900 shadow-sm'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      New Customer Register
+                    </button>
+                  </div>
+
+                  <div className="p-4">
+                    {authInlineTab === 'login' ? (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase text-slate-600">
+                              Email Address
+                            </label>
+                            <input
+                              type="email"
+                              placeholder="alex.morgan@wanderlust.travel"
+                              value={inlineEmail}
+                              onChange={(e) => setInlineEmail(e.target.value)}
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <div className="flex justify-between items-center">
+                              <label className="text-[11px] font-bold uppercase text-slate-600">
+                                Password
+                              </label>
+                              <span className="text-[10px] text-slate-400">demo: password123</span>
+                            </div>
+                            <div className="relative">
+                              <input
+                                type={showInlinePassword ? 'text' : 'password'}
+                                placeholder="••••••••"
+                                value={inlinePassword}
+                                onChange={(e) => setInlinePassword(e.target.value)}
+                                className="w-full pl-3 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowInlinePassword(!showInlinePassword)}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                              >
+                                {showInlinePassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-1">
+                          <button
+                            type="button"
+                            disabled={inlineAuthLoading}
+                            onClick={handleInlineLogin}
+                            className="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-75"
+                          >
+                            <span>Sign In & Continue Booking</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => openAuthModal('login')}
+                            className="text-xs text-sky-600 hover:text-sky-800 font-semibold underline cursor-pointer"
+                          >
+                            Open Sign In Dialog
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase text-slate-600">
+                              Full Name *
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="Alex Morgan"
+                              value={inlineName}
+                              onChange={(e) => setInlineName(e.target.value)}
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase text-slate-600">
+                              Email Address *
+                            </label>
+                            <input
+                              type="email"
+                              placeholder="alex@example.com"
+                              value={inlineEmail}
+                              onChange={(e) => setInlineEmail(e.target.value)}
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase text-slate-600">
+                              Phone Number *
+                            </label>
+                            <input
+                              type="tel"
+                              placeholder="+1 (555) 000-0000"
+                              value={inlinePhone}
+                              onChange={(e) => setInlinePhone(e.target.value)}
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            />
+                          </div>
+
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold uppercase text-slate-600">
+                              Password *
+                            </label>
+                            <input
+                              type="password"
+                              placeholder="Min 4 chars"
+                              value={inlinePassword}
+                              onChange={(e) => setInlinePassword(e.target.value)}
+                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-1">
+                          <button
+                            type="button"
+                            disabled={inlineAuthLoading}
+                            onClick={handleInlineRegister}
+                            className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-sm transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-75"
+                          >
+                            <span>Register Customer & Continue</span>
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Customer Details Form Inputs (Pre-filled from logged-in customer) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
               {/* Full Name */}
               <div className="space-y-1.5 sm:col-span-2">
                 <label htmlFor="fullName" className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Full Name (as per Passport/ID) *
+                  Lead Traveler Full Name (as per Passport/ID) *
                 </label>
-                <input
-                  id="fullName"
-                  type="text"
-                  placeholder="e.g. Alex Morgan"
-                  value={formData.fullName}
-                  onChange={(e) => {
-                    setFormData({ ...formData, fullName: e.target.value });
-                    if (errors.fullName) setErrors({ ...errors, fullName: null });
-                  }}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
-                    errors.fullName ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 bg-slate-50'
-                  }`}
-                />
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="fullName"
+                    type="text"
+                    placeholder="e.g. Alex Morgan"
+                    value={formData.fullName}
+                    onChange={(e) => {
+                      setFormData({ ...formData, fullName: e.target.value });
+                      if (errors.fullName) setErrors({ ...errors, fullName: null });
+                    }}
+                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                      errors.fullName ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 bg-slate-50'
+                    }`}
+                  />
+                </div>
                 {errors.fullName && (
                   <p className="text-xs text-rose-500 font-medium flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
@@ -643,21 +1087,24 @@ export const BookingPage = () => {
               {/* Email */}
               <div className="space-y-1.5">
                 <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Email Address *
+                  Customer Email Address *
                 </label>
-                <input
-                  id="email"
-                  type="email"
-                  placeholder="alex.morgan@example.com"
-                  value={formData.email}
-                  onChange={(e) => {
-                    setFormData({ ...formData, email: e.target.value });
-                    if (errors.email) setErrors({ ...errors, email: null });
-                  }}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
-                    errors.email ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 bg-slate-50'
-                  }`}
-                />
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="alex.morgan@wanderlust.travel"
+                    value={formData.email}
+                    onChange={(e) => {
+                      setFormData({ ...formData, email: e.target.value });
+                      if (errors.email) setErrors({ ...errors, email: null });
+                    }}
+                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                      errors.email ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 bg-slate-50'
+                    }`}
+                  />
+                </div>
                 {errors.email && (
                   <p className="text-xs text-rose-500 font-medium flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
@@ -669,21 +1116,24 @@ export const BookingPage = () => {
               {/* Phone */}
               <div className="space-y-1.5">
                 <label htmlFor="phone" className="block text-xs font-bold uppercase tracking-wider text-slate-600">
-                  Phone / Mobile Number *
+                  Contact Phone Number *
                 </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  placeholder="+1 (555) 000-0000"
-                  value={formData.phone}
-                  onChange={(e) => {
-                    setFormData({ ...formData, phone: e.target.value });
-                    if (errors.phone) setErrors({ ...errors, phone: null });
-                  }}
-                  className={`w-full px-3.5 py-2.5 rounded-xl border text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
-                    errors.phone ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 bg-slate-50'
-                  }`}
-                />
+                <div className="relative">
+                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={formData.phone}
+                    onChange={(e) => {
+                      setFormData({ ...formData, phone: e.target.value });
+                      if (errors.phone) setErrors({ ...errors, phone: null });
+                    }}
+                    className={`w-full pl-10 pr-3.5 py-2.5 rounded-xl border text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                      errors.phone ? 'border-rose-400 bg-rose-50/30' : 'border-slate-200 bg-slate-50'
+                    }`}
+                  />
+                </div>
                 {errors.phone && (
                   <p className="text-xs text-rose-500 font-medium flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
@@ -769,7 +1219,7 @@ export const BookingPage = () => {
                   <button
                     type="button"
                     onClick={handleRemovePromo}
-                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold"
+                    className="text-xs text-rose-600 hover:text-rose-700 font-semibold cursor-pointer"
                   >
                     Remove
                   </button>
@@ -790,7 +1240,7 @@ export const BookingPage = () => {
                   <button
                     type="button"
                     onClick={handleApplyPromo}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-colors"
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold transition-colors cursor-pointer"
                   >
                     Apply
                   </button>
@@ -812,21 +1262,56 @@ export const BookingPage = () => {
               </span>
             </div>
 
+            {/* Customer Status Notice in Sidebar */}
+            {isAuthenticated ? (
+              <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between text-xs">
+                <span className="text-emerald-800 font-medium truncate">
+                  Logged in: <strong>{user.name.split(' ')[0]}</strong>
+                </span>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="text-rose-600 hover:text-rose-700 font-bold underline cursor-pointer text-[11px]"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Customer sign-in required before booking</span>
+              </div>
+            )}
+
             {/* Confirm & Book Submit Button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-600 hover:from-sky-700 hover:to-emerald-700 text-white font-bold text-center text-sm sm:text-base shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-75 cursor-pointer"
-            >
-              {isSubmitting ? (
-                <span>Confirming Booking...</span>
-              ) : (
-                <>
-                  <CreditCard className="w-5 h-5" />
-                  <span>Confirm & Save Booking</span>
-                </>
-              )}
-            </button>
+            {isAuthenticated ? (
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-sky-600 via-teal-600 to-emerald-600 hover:from-sky-700 hover:to-emerald-700 text-white font-bold text-center text-sm sm:text-base shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-75 cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <span>Confirming Booking...</span>
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    <span>Confirm & Save Booking</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  addToast('Please sign in or register your customer details above.', 'info');
+                  scrollToCustomerSection();
+                }}
+                className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-center text-sm sm:text-base shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Lock className="w-5 h-5" />
+                <span>Log In to Confirm Booking</span>
+              </button>
+            )}
 
             <div className="text-[11px] text-slate-600 text-center space-y-1">
               <p>🔒 No advance card charge required for demo testing.</p>

@@ -64,8 +64,10 @@ export const DestinationsPage = () => {
         // Search query
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase();
-          const matchTitle = pkg.title.toLowerCase().includes(q);
-          const matchDest = pkg.destination.toLowerCase().includes(q);
+          const isManaliSearch = q.includes('maneli') || q.includes('manali');
+          const isManaliPkg = pkg.destination.toLowerCase() === 'manali' || pkg.destinationId === 'dest-manali';
+          const matchTitle = pkg.title.toLowerCase().includes(q) || (isManaliSearch && isManaliPkg);
+          const matchDest = pkg.destination.toLowerCase().includes(q) || (isManaliSearch && isManaliPkg);
           const matchCountry = pkg.country.toLowerCase().includes(q);
           const matchDesc = pkg.overview.toLowerCase().includes(q);
           const matchCategory = pkg.category.toLowerCase().includes(q);
@@ -128,9 +130,11 @@ export const DestinationsPage = () => {
     return destinationsData.filter((dest) => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
+        const isManaliSearch = q.includes('maneli') || q.includes('manali');
         return (
           dest.name.toLowerCase().includes(q) ||
           dest.country.toLowerCase().includes(q) ||
+          (isManaliSearch && dest.id === 'dest-manali') ||
           dest.popularTags.some((t) => t.toLowerCase().includes(q))
         );
       }

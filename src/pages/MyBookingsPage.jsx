@@ -15,22 +15,40 @@ import {
   ShieldCheck,
   CheckCircle2,
   AlertTriangle,
-  RotateCcw
+  RotateCcw,
+  User,
+  LogOut,
+  UserCheck,
+  Lock
 } from 'lucide-react';
 import { useBooking } from '../context/BookingContext';
+import { useAuth } from '../context/AuthContext';
 import { TicketModal } from '../components/TicketModal';
 import { formatDate, formatPrice } from '../utils/formatters';
 
 export const MyBookingsPage = () => {
   const { bookings, cancelBooking, removeBooking, currency } = useBooking();
+  const { user, isAuthenticated, logout, openAuthModal, openProfileModal } = useAuth();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [onlyMyBookings, setOnlyMyBookings] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [cancelModalBooking, setCancelModalBooking] = useState(null);
 
   // Filtered list
   const filteredBookings = useMemo(() => {
     return bookings.filter((b) => {
+      // Filter by customer if toggled
+      if (onlyMyBookings && user) {
+        const matchesEmail = b.customerEmail?.toLowerCase() === user.email?.toLowerCase();
+        const matchesName = b.customerName?.toLowerCase() === user.name?.toLowerCase();
+        const matchesId = b.customerId === user.id;
+        if (!matchesEmail && !matchesName && !matchesId) {
+          return false;
+        }
+      }
+
       // Status filter
       if (statusFilter !== 'All' && b.status !== statusFilter) {
         return false;
@@ -50,7 +68,7 @@ export const MyBookingsPage = () => {
 
       return true;
     });
-  }, [bookings, statusFilter, searchQuery]);
+  }, [bookings, statusFilter, searchQuery, onlyMyBookings, user]);
 
   const handleConfirmCancel = () => {
     if (cancelModalBooking) {
@@ -77,19 +95,98 @@ export const MyBookingsPage = () => {
         </div>
       </div>
 
+      {/* Customer Authentication & Profile Bar */}
+      {isAuthenticated ? (
+        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <img
+              src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`}
+              alt={user.name}
+              className="w-11 h-11 rounded-xl object-cover border border-sky-300 shadow-sm"
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-slate-900 text-sm">{user.name}</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200 flex items-center gap-1">
+                  <UserCheck className="w-3 h-3" />
+                  Logged In Customer
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">
+                {user.email} {user.phone && `• ${user.phone}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setOnlyMyBookings(!onlyMyBookings)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer border ${
+                onlyMyBookings
+                  ? 'bg-sky-50 border-sky-300 text-sky-700'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {onlyMyBookings ? '✓ Filtered: My Account Only' : 'Filter by My Account'}
+            </button>
+
+            <button
+              type="button"
+              onClick={openProfileModal}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
+            >
+              Customer Profile
+            </button>
+
+            <button
+              type="button"
+              onClick={logout}
+              className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log Out</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-sky-50 to-teal-50 border border-sky-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shrink-0">
+              <Lock className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm">Customer Login Available</h4>
+              <p className="text-xs text-slate-600">
+                Sign in to view your personalized customer vouchers, or proceed as guest.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => openAuthModal('login')}
+            className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold shadow-sm transition-colors flex items-center gap-1.5 shrink-0 self-start sm:self-auto cursor-pointer"
+          >
+            <User className="w-3.5 h-3.5" />
+            <span>Customer Sign In / Register</span>
+          </button>
+        </div>
+      )}
+
       {/* Control Bar: Search & Status Filters */}
       <div className="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm flex flex-col sm:flex-row gap-4 items-center justify-between">
         {/* Search inside bookings */}
         <div className="relative w-full sm:max-w-xs">
           <label htmlFor="search-bookings" className="sr-only">Search by destination, package, or reference code</label>
-          <Search className="w-4 h-4 text-slate-600 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             id="search-bookings"
             type="text"
-            placeholder="Search booking ID, destination..."
+            placeholder="Search booking ID, destination, or traveler..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
         </div>
 
@@ -99,7 +196,7 @@ export const MyBookingsPage = () => {
             <button
               key={tab}
               onClick={() => setStatusFilter(tab)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-colors cursor-pointer ${
                 statusFilter === tab
                   ? 'bg-slate-900 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -121,15 +218,24 @@ export const MyBookingsPage = () => {
             No Bookings Found
           </h3>
           <p className="text-sm text-slate-500 leading-relaxed">
-            {searchQuery || statusFilter !== 'All'
+            {searchQuery || statusFilter !== 'All' || onlyMyBookings
               ? 'No reservations matched your search query or filter.'
               : "You haven't reserved any vacation packages yet. Discover your next dream getaway now!"}
           </p>
 
-          <div className="pt-2">
+          <div className="pt-2 flex justify-center gap-3">
+            {onlyMyBookings && (
+              <button
+                type="button"
+                onClick={() => setOnlyMyBookings(false)}
+                className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+              >
+                Show All Bookings
+              </button>
+            )}
             <Link
               to="/destinations"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-sm shadow-md transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs sm:text-sm shadow-md transition-colors"
             >
               <span>Explore Top Destinations</span>
               <ArrowRight className="w-4 h-4" />
@@ -189,7 +295,7 @@ export const MyBookingsPage = () => {
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-sky-600 shrink-0" />
                       <div>
-                        <span className="text-[11px] text-slate-600 block">Departure</span>
+                        <span className="text-[11px] text-slate-400 block">Departure</span>
                         <span className="font-bold text-slate-900">{formatDate(b.travelDate)}</span>
                       </div>
                     </div>
@@ -197,7 +303,7 @@ export const MyBookingsPage = () => {
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-teal-600 shrink-0" />
                       <div>
-                        <span className="text-[11px] text-slate-600 block">Guests</span>
+                        <span className="text-[11px] text-slate-400 block">Guests</span>
                         <span className="font-bold text-slate-900">
                           {b.adults} Adults {b.children > 0 && `, ${b.children} Kids`}
                         </span>
@@ -207,7 +313,7 @@ export const MyBookingsPage = () => {
                     <div className="flex items-center gap-2">
                       <Luggage className="w-4 h-4 text-indigo-600 shrink-0" />
                       <div>
-                        <span className="text-[11px] text-slate-600 block">Room Plan</span>
+                        <span className="text-[11px] text-slate-400 block">Room Plan</span>
                         <span className="font-bold text-slate-900 capitalize truncate">
                           {b.roomTypeName?.split('(')[0] || b.roomType}
                         </span>
@@ -218,7 +324,8 @@ export const MyBookingsPage = () => {
                   {/* Add-ons & Traveler pills */}
                   <div className="flex flex-wrap gap-2 pt-2">
                     <span className="px-2.5 py-1 rounded-md bg-slate-100 text-slate-700 text-xs font-medium">
-                      Lead Traveler: <strong>{b.customerName}</strong>
+                      Customer: <strong>{b.customerName}</strong>
+                      {b.customerEmail && <span className="text-slate-400 font-normal"> ({b.customerEmail})</span>}
                     </span>
                     {b.addons?.map((addon, idx) => (
                       <span
@@ -235,7 +342,7 @@ export const MyBookingsPage = () => {
                 {/* Bottom Row: Price & Action Buttons */}
                 <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <span className="text-[11px] text-slate-600 block">Total Amount</span>
+                    <span className="text-[11px] text-slate-400 block">Total Amount</span>
                     <span className="text-xl font-extrabold text-sky-600">
                       {formatPrice(b.totalPrice, b.currency || currency)}
                     </span>
@@ -245,7 +352,7 @@ export const MyBookingsPage = () => {
                     {/* View E-Ticket */}
                     <button
                       onClick={() => setSelectedTicket(b)}
-                      className="px-4 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                      className="px-4 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                     >
                       <Eye className="w-4 h-4" />
                       <span>View E-Ticket</span>
@@ -255,7 +362,7 @@ export const MyBookingsPage = () => {
                     {b.status === 'Confirmed' && (
                       <button
                         onClick={() => setCancelModalBooking(b)}
-                        className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1.5 transition-colors"
+                        className="px-3.5 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
                       >
                         <XCircle className="w-4 h-4" />
                         <span>Cancel</span>
@@ -265,7 +372,7 @@ export const MyBookingsPage = () => {
                     {/* Delete completely */}
                     <button
                       onClick={() => removeBooking(b.id)}
-                      className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors"
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
                       title="Remove record"
                       aria-label="Remove record"
                     >
@@ -299,13 +406,13 @@ export const MyBookingsPage = () => {
             <div className="flex gap-3 justify-center pt-2">
               <button
                 onClick={() => setCancelModalBooking(null)}
-                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-100 transition-colors"
+                className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold text-xs hover:bg-slate-100 transition-colors cursor-pointer"
               >
                 Keep Booking
               </button>
               <button
                 onClick={handleConfirmCancel}
-                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-colors"
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
               >
                 Yes, Cancel Reservation
               </button>
